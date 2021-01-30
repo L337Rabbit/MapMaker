@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "skAUT471JRFVZqguQj1EZGBKI5HFUH2vk93jb2kVb9bx26FDF2RjgPTYmNnkBM2aNKI37FiVR2B6jhta9etpgw==",
+  "success": true,
+  "projectFilePath": "F:\\CodeProjects\\MapMaker\\MapMaker\\MapMaker.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\rabbit\\.nuget\\packages\\skiasharp\\2.80.2\\skiasharp.2.80.2.nupkg.sha512",
+    "C:\\Users\\rabbit\\.nuget\\packages\\system.memory\\4.5.3\\system.memory.4.5.3.nupkg.sha512"
+  ],
+  "logs": []
+}
