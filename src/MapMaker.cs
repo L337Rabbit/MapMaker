@@ -3,6 +3,8 @@ using System.IO;
 using System.Drawing;
 using SkiaSharp;
 using System.Xml.Serialization;
+using com.pmg.MapMaker.src;
+using System.Threading.Tasks;
 
 namespace com.pmg.MapMaker
 {
@@ -30,58 +32,30 @@ namespace com.pmg.MapMaker
             if(renderConfig.ClearColor != null)
             {
                 canvas.FillCanvas(renderConfig.ClearColor);
-            }
-
-            Color lineColor = Color.FromArgb(126, 149, 164);
-            DrawMeridians(canvas, lineColor);
-            DrawGreatCircles(canvas, lineColor);
+            }            
 
             foreach (Layer layer in renderConfig.Layers)
             {
-                string filepath = layer.FilePath;
-                ShapeData shapeData = ShapefileReader.ReadFile(filepath);
-
-                foreach(Shape shape in shapeData.Shapes) 
+                if (layer is ParallelLayer)
                 {
-                    if (layer.FillPolygons)
-                    {
-                        Polygon polygon = null;
+                    DrawParallels(canvas, (ParallelLayer)layer);
+                }
+                else if (layer is MeridianLayer)
+                {
+                    DrawMeridians(canvas, (MeridianLayer)layer);
+                }
+                else if (layer is PolygonLayer)
+                {
+                    string filepath = layer.FilePath;
+                    ShapeData shapeData = ShapefileReader.ReadFile(filepath);
+                    DrawPolygons(shapeData, canvas, (PolygonLayer)layer);
 
-                        if (shape is PolyLine)
-                        {
-                            polygon = new Polygon();
-                            polygon.Parts = ((PolyLine)shape).Parts;
-                        }
-                        else
-                        {
-                            polygon = (Polygon)shape;
-                        }
-
-                        if (layer.DrawEdges)
-                        {
-                            canvas.FillBorderedPolygon(polygon, layer.PolygonFillColor, layer.EdgeColor);
-                        }
-                        else
-                        {
-                            canvas.FillPolygon(polygon, layer.PolygonFillColor);
-                        }
-                    }
-                    else if (layer.DrawEdges)
-                    {
-                        PolyLine line = null;
-
-                        if (shape is Polygon) 
-                        {
-                            line = new PolyLine();
-                            line.Parts = ((Polygon)shape).Parts;
-                        }
-                        else
-                        {
-                            line = (PolyLine)shape;
-                        }
-
-                        canvas.DrawPolyLine(line, layer.EdgeColor);
-                    }
+                }
+                else if (layer is LineLayer)
+                {
+                    string filepath = layer.FilePath;
+                    ShapeData shapeData = ShapefileReader.ReadFile(filepath);
+                    DrawPolylines(shapeData, canvas, (LineLayer)layer);
                 }
             }
 
@@ -92,21 +66,80 @@ namespace com.pmg.MapMaker
             //49 = RUSSIA
         }
 
-        private static void DrawMeridians(MapCanvas canvas, Color color)
+        private static void DrawPolylines(ShapeData shapeData, MapCanvas canvas, LineLayer layer)
         {
-            for (float lon = -180f; lon <= 180; lon += 10.0f)
+            foreach (Shape shape in shapeData.shapes)
             {
-                PolyLine meridianLine = CreateMeridanLine(lon);
-
-                canvas.DrawPolyLine(meridianLine, color);
+                DrawPolyline(shape, canvas, layer);
             }
         }
 
-        private static PolyLine CreateMeridanLine(float longitude)
+        private static void DrawPolyline(Shape shape, MapCanvas canvas, LineLayer layer)
+        {
+            PolyLine line = null;
+
+            if(shape is Polygon)
+            {
+                line = new PolyLine();
+                line.Parts = ((Polygon)shape).Parts;
+            }
+            else { line = (PolyLine)shape; }
+
+            canvas.DrawPolyLine(line, layer.EdgeColor);
+        }
+
+        private static void DrawPolygons(ShapeData shapeData, MapCanvas canvas, PolygonLayer layer)
+        {
+            foreach (Shape shape in shapeData.shapes)
+            {
+                DrawPolygon(shape, canvas, layer);
+            }
+        }
+
+        private static void DrawPolygon(Shape shape, MapCanvas canvas, PolygonLayer layer)
+        {
+            Polygon polygon = null;
+
+            if (shape is PolyLine)
+            {
+                polygon = new Polygon();
+                polygon.Parts = ((PolyLine)shape).Parts;
+            }
+            else { polygon = (Polygon)shape; }
+
+            if(layer.FillPolygons)
+            {
+                if(layer.DrawEdges)
+                {
+                    canvas.FillBorderedPolygon(polygon, layer.FillColor, layer.EdgeColor);
+                }
+                else
+                {
+                    canvas.FillPolygon(polygon, layer.FillColor);
+                }
+            }
+            else if(layer.DrawEdges)
+            {
+                canvas.DrawPolygon(polygon, layer.EdgeColor);
+
+            }
+        }
+
+        private static void DrawMeridians(MapCanvas canvas, MeridianLayer layer)
+        {
+            for (double lon = layer.MinimumLongitude; lon <= layer.MaximumLongitude; lon += layer.LongitudeInterval)
+            {
+                PolyLine meridianLine = CreateMeridanLine(lon, layer);
+
+                canvas.DrawPolyLine(meridianLine, layer.Color);
+            }
+        }
+
+        private static PolyLine CreateMeridanLine(double longitude, MeridianLayer layer)
         {
             PointSet pointset = new PointSet();
 
-            for (float lat = -90.0f; lat <= 90.0f; lat += 5.0f)
+            for (double lat = layer.MinimumLatitude; lat <= layer.MaximumLatitude; lat += layer.LatitudeInterval)
             {
                 Point b = new Point(longitude, lat);
                 pointset.Points.Add(b);
@@ -117,21 +150,21 @@ namespace com.pmg.MapMaker
             return line;
         }
 
-        private static void DrawGreatCircles(MapCanvas canvas, Color color)
+        private static void DrawParallels(MapCanvas canvas, ParallelLayer layer)
         {
-            for (float lat = -90.0f; lat <= 90.0f; lat += 10.0f)
+            for (double lat = layer.MinimumLatitude + layer.LatitudeOffset; lat <= layer.MaximumLatitude; lat += layer.LatitudeInterval)
             {
-                PolyLine circleLine = CreateGreatCircle(lat);
+                PolyLine circleLine = CreateParallel(lat, layer);
 
-                canvas.DrawPolyLine(circleLine, color);
+                canvas.DrawPolyLine(circleLine, layer.Color);
             }
         }
 
-        private static PolyLine CreateGreatCircle(float latitude)
+        private static PolyLine CreateParallel(double latitude, ParallelLayer layer)
         {
             PointSet pointset = new PointSet();
 
-            for (float lon = -180.0f; lon <= 180.0f; lon += 5.0f)
+            for (double lon = layer.MinimumLongitude; lon <= layer.MaximumLongitude; lon += layer.LongitudeInterval)
             {
                 Point b = new Point(lon, latitude);
                 pointset.Points.Add(b);

@@ -99,7 +99,7 @@ namespace com.pmg.MapMaker
             SKPaint paint = new SKPaint();
 
             paint.Color = color;
-            paint.StrokeWidth = 2.0f;
+            paint.StrokeWidth = 1.0f;
             paint.IsStroke = true;
             paint.IsDither = false;
 
@@ -115,6 +115,17 @@ namespace com.pmg.MapMaker
             SKColor skColor = GetSKColor(color);
 
             foreach (PointSet part in pline.Parts)
+            {
+                SKPoint[] points = CreatePointArrayForPart(part);
+                DrawLines(points, skColor);
+            }
+        }
+
+        public void DrawPolygon(Polygon pgon, Color color)
+        {
+            SKColor skColor = GetSKColor(color);
+
+            foreach (PointSet part in pgon.Parts)
             {
                 SKPoint[] points = CreatePointArrayForPart(part);
                 DrawLines(points, skColor);
