@@ -3,25 +3,29 @@ using System.Collections.Generic;
 using System.Text;
 using SkiaSharp;
 using System.Drawing;
+using com.pmg.MapMaker.src;
 
 namespace com.pmg.MapMaker
 {
     public class MapCanvas
     {
-        private ProjectionSettings projectionSettings;
+        private RenderConfig renderConfig;
         private SKImageInfo imageInfo;
         private SKSurface surface;
         private SKCanvas canvas;
+        private int zoom;
+        private float xOffset;
+        private float yOffset;
 
-        public MapCanvas(int width, int height, ProjectionSettings projectionSettings)
+        public MapCanvas(int width, int height, RenderConfig renderConfig)
         {
             imageInfo = new SKImageInfo(width, height);
             surface = SKSurface.Create(imageInfo);
             canvas = surface.Canvas;
-            this.projectionSettings = projectionSettings;
+            this.renderConfig = renderConfig;
         }
 
-        public MapCanvas(int width, int height, ProjectionSettings projectionSettings, Color color) : this(width, height, projectionSettings)
+        public MapCanvas(int width, int height, RenderConfig renderConfig, Color color) : this(width, height, renderConfig)
         {
             canvas.Clear(new SKColor(color.R, color.G, color.B, color.A));
         }
@@ -99,7 +103,7 @@ namespace com.pmg.MapMaker
             SKPaint paint = new SKPaint();
 
             paint.Color = color;
-            paint.StrokeWidth = 1.0f;
+            paint.StrokeWidth = 4.0f;
             paint.IsStroke = true;
             paint.IsDither = false;
 
@@ -147,7 +151,12 @@ namespace com.pmg.MapMaker
             {
                 //Point currentPoint = part.Points[i];
                 Point currentPoint = ReprojectPoint(part.Points[i]);
-                SKPoint pf = new SKPoint((float)(currentPoint.X  * imageInfo.Width), imageInfo.Height - (float)(currentPoint.Y * imageInfo.Height));
+
+                //Take zoom and offset into consideration
+                SKPoint pf = new SKPoint((float)((currentPoint.X +renderConfig.XOffset) * imageInfo.Width * (renderConfig.ZoomLevel + 1)), 
+                    imageInfo.Height - (float)((currentPoint.Y + renderConfig.YOffset) * imageInfo.Height * (renderConfig.ZoomLevel + 1)));
+
+                //SKPoint pf = new SKPoint((float)(currentPoint.X  * imageInfo.Width), imageInfo.Height - (float)(currentPoint.Y * imageInfo.Height));
                 points[i] = pf;
             }
 
@@ -156,23 +165,33 @@ namespace com.pmg.MapMaker
 
         public Point ReprojectPoint(Point point)
         {
-            switch(projectionSettings.ProjectionType) 
+            switch(renderConfig.ProjectionSettings.ProjectionType) 
             {
                 case ProjectionType.AZIMUTHAL: 
                     return Projector.NormalizeAzimuth(Projector.ToPolarAzimuth(point, 
-                        ((AzimuthalProjection)projectionSettings).OuterEdgeLatitude));
+                        ((AzimuthalProjection)renderConfig.ProjectionSettings).OuterEdgeLatitude));
                 case ProjectionType.EQUIRECTANGULAR:
                     return Projector.NormalizeEquirectangular(Projector.ToEquirectangular(point,
-                        ((EquirectangularProjection)projectionSettings).CentralMeridianLongitude,
-                        ((EquirectangularProjection)projectionSettings).CentralParallelLatitude,
-                        ((EquirectangularProjection)projectionSettings).StandardParallelLatitude));
+                        ((EquirectangularProjection)renderConfig.ProjectionSettings).CentralMeridianLongitude,
+                        ((EquirectangularProjection)renderConfig.ProjectionSettings).CentralParallelLatitude,
+                        ((EquirectangularProjection)renderConfig.ProjectionSettings).StandardParallelLatitude));
                 case ProjectionType.MERCATOR:
                     return Projector.NormalizeMercator(Projector.ToMercator(point, 
-                        ((MercatorProjection)projectionSettings).LatitudeClip,
-                        ((MercatorProjection)projectionSettings).CentralMeridianLongitude));
+                        ((MercatorProjection)renderConfig.ProjectionSettings).LatitudeClip,
+                        ((MercatorProjection)renderConfig.ProjectionSettings).CentralMeridianLongitude));
                 case ProjectionType.MOLLWEIDE:
                     return Projector.NormalizeMollweide(Projector.ToMollweide(point, 
-                        ((MolleweideProjection)projectionSettings).CentralMeridianLongitude));
+                        ((MolleweideProjection)renderConfig.ProjectionSettings).CentralMeridianLongitude));
+                case ProjectionType.WAGNERVI:
+                    return Projector.NormalizeWagnerVI(Projector.ToWagnerVI(point));
+                case ProjectionType.NATURAL_EARTH:
+                    return Projector.NormalizeNaturalEarth(Projector.ToNaturalEarth(point));
+                case ProjectionType.ECKERTIV:
+                    return Projector.NormalizeEckertIV(Projector.ToEckertIV(point));
+                case ProjectionType.ORTHOGRAPHIC:
+                    return Projector.NormalizeOrthographic(Projector.ToOrthographic(point, 
+                        ((OrthographicProjection)renderConfig.ProjectionSettings).CenterLatitude,
+                        ((OrthographicProjection)renderConfig.ProjectionSettings).CenterLongitude));
                 default:
                     return null;
             }

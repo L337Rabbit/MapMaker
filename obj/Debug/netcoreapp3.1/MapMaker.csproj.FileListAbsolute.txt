@@ -125,3 +125,8 @@ F:\CodeProjects\MapMaker\MapMaker\obj\Debug\netcoreapp3.1\MapMaker.csproj.CopyCo
 F:\CodeProjects\MapMaker\MapMaker\obj\Debug\netcoreapp3.1\MapMaker.dll
 F:\CodeProjects\MapMaker\MapMaker\obj\Debug\netcoreapp3.1\MapMaker.pdb
 F:\CodeProjects\MapMaker\MapMaker\obj\Debug\netcoreapp3.1\MapMaker.genruntimeconfig.cache
+F:\CodeProjects\MapMaker\MapMaker\bin\Debug\netcoreapp3.1\config\wagner_example.config
+F:\CodeProjects\MapMaker\MapMaker\bin\Debug\netcoreapp3.1\config\natural_earth_example.config
+F:\CodeProjects\MapMaker\MapMaker\bin\Debug\netcoreapp3.1\config\eckertiv_example.config
+F:\CodeProjects\MapMaker\MapMaker\bin\Debug\netcoreapp3.1\config\orthographic_example.config
+F:\CodeProjects\MapMaker\MapMaker\obj\Debug\netcoreapp3.1\MapMaker.csprojAssemblyReference.cache

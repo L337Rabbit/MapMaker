@@ -18,6 +18,15 @@ namespace com.pmg.MapMaker
         [XmlAttribute]
         public int ImageHeight { get; set; }
 
+        [XmlAttribute]
+        public double ZoomLevel { get; set; } = 0;
+
+        [XmlAttribute]
+        public double XOffset { get; set; } = 0.0;
+
+        [XmlAttribute]
+        public double YOffset { get; set; } = 0.0;
+
         [XmlElement]
         public ProjectionSettings ProjectionSettings { get; set; }
 

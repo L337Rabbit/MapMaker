@@ -27,7 +27,7 @@ namespace com.pmg.MapMaker
             fs.Close();
 
             Console.WriteLine("Render projection: " + renderConfig.ProjectionSettings);
-            MapCanvas canvas = new MapCanvas(renderConfig.ImageWidth, renderConfig.ImageHeight, renderConfig.ProjectionSettings);
+            MapCanvas canvas = new MapCanvas(renderConfig.ImageWidth, renderConfig.ImageHeight, renderConfig);
 
             if(renderConfig.ClearColor != null)
             {
@@ -36,6 +36,8 @@ namespace com.pmg.MapMaker
 
             foreach (Layer layer in renderConfig.Layers)
             {
+                if(!layer.IsEnabled) { continue; }
+
                 if (layer is ParallelLayer)
                 {
                     DrawParallels(canvas, (ParallelLayer)layer);
@@ -61,9 +63,9 @@ namespace com.pmg.MapMaker
 
             canvas.SaveImage("map.png", ImageFormat.PNG);
 
-            //154 = USA
-            //10 = CHINA
-            //49 = RUSSIA
+            //153 = USA
+            //9 = CHINA
+            //48 = RUSSIA
         }
 
         private static void DrawPolylines(ShapeData shapeData, MapCanvas canvas, LineLayer layer)
@@ -115,6 +117,7 @@ namespace com.pmg.MapMaker
                 }
                 else
                 {
+                    //canvas.FillPolygon(polygon, ColorUtils.RandomColor());
                     canvas.FillPolygon(polygon, layer.FillColor);
                 }
             }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using com.pmg.MapMaker.src;
+using System;
 using System.Collections.Generic;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
@@ -29,6 +30,114 @@ namespace com.pmg.MapMaker
             y /= (EARTH_RADIUS * ToRadians(180));
 
             return new Point(x, y);
+        }
+
+        public static Point ToOrthographic(Point point, double centerLatitude = 0.0, double centerLongitude = 0.0)
+        {
+            double latRadians = ToRadians(point.y);
+            double lonRadians = ToRadians(point.x);
+            double x = 0.0;
+            double y = 0.0;
+
+            double c = Math.Sin(ToRadians(centerLatitude)) * Math.Sin(latRadians) +
+            Math.Cos(ToRadians(centerLatitude)) * Math.Cos(latRadians) * Math.Cos(lonRadians - ToRadians(centerLongitude));
+
+            x = Math.Cos(latRadians) * Math.Sin(lonRadians - ToRadians(centerLongitude));
+            y = (Math.Cos(ToRadians(centerLatitude)) * Math.Sin(latRadians)) -
+                (Math.Sin(ToRadians(centerLatitude)) * Math.Cos(latRadians) * Math.Cos(lonRadians - ToRadians(centerLongitude)));
+
+            if(c < 0) 
+            { 
+                double t = Math.Atan2(y, x);
+                x = Math.Cos(t);
+                y = Math.Sin(t);;
+            }
+
+            return new Point(x, y);
+        }
+
+        public static Point NormalizeOrthographic(Point point)
+        {
+            return new Point((point.x + 1.0) / 2.0, (point.y + 1.0) / 2.0);
+        }
+
+        public static Point ToEckertIV(Point point, double centralMeridianLon = 0.0)
+        {
+            double latRadians = ToRadians(point.y);
+            double lonRadians = ToRadians(point.x);
+
+            double val = latRadians / 2.0;
+            double theta = Math.Sin(latRadians) * (2.0 + Math.PI / 2.0);
+
+            /*
+            for(int i = 0; i < 20; i++)
+            {
+                theta = -1.0 * ((theta + (Math.Sin(theta) * Math.Cos(theta)) + (2.0 * Math.Sin(theta)) - ((2.0 + 0.5 * Math.PI) * Math.Sin(latRadians))) / 
+                    (2.0 * Math.Cos(theta) * (1.0 + Math.Cos(theta))));
+            }*/
+
+            double x = (2.0 / Math.Sqrt(4.0 * Math.PI + Math.Pow(Math.PI, 2))) * (lonRadians - ToRadians(centralMeridianLon)) * (1.0 + Math.Cos(theta));
+            double y = 2.0 * Math.Sqrt((Math.PI / (4.0 + Math.PI))) * Math.Sin(theta);
+
+            return new Point(x, y);
+        }
+
+        public static Point NormalizeEckertIV(Point point)
+        {
+            return new Point((point.x + Math.PI) / (2 * Math.PI), (point.y + Math.PI / 2.0) / (Math.PI));
+        }
+
+        public static Point ToNaturalEarth(Point point)
+        {
+            //Determine the parallel length
+            int latA = Math.Abs((int)(Math.Floor((point.y / 5.0)) * 5));
+            int latB = latA + 5;
+
+            if(latB > 90)
+            {
+                latB = 90;
+            }
+
+            (double, double) valsA = NaturalEarthProjection.Lookup[latA];
+            (double, double) valsB = NaturalEarthProjection.Lookup[latB];
+
+            double pl1 = valsA.Item1;
+            double pl2 = valsB.Item1;
+
+            double finalPL = ((ToRadians(Math.Abs(point.y) - latA) / ToRadians(5.0)) * (pl2 - pl1)) + pl1;
+
+            double pd1 = valsA.Item2;
+            double pd2 = valsB.Item2;
+
+            double finalPD = ((ToRadians(Math.Abs(point.y) - latA) / ToRadians(5.0)) * (pd2 - pd1)) + pd1;
+
+            double x = 0.8707 * finalPL * ToRadians(point.x);
+            double y = 0.8708 * 0.52 * finalPD * Math.PI;
+
+            if(point.y < 0) { y *= -1; }
+
+            return new Point(x, y);
+        }
+
+        public static Point NormalizeNaturalEarth(Point point)
+        {
+            return new Point((point.x + Math.PI) / (2 * Math.PI), (point.y + Math.PI / 2.0) / (Math.PI));
+        }
+
+        public static Point ToWagnerVI(Point point)
+        {
+            double latRadians = ToRadians(point.y);
+            double lonRadians = ToRadians(point.x);
+
+            double x = lonRadians * Math.Sqrt(1.0 - 3.0 * Math.Pow(latRadians / Math.PI, 2));
+            double y = latRadians;
+
+            return new Point(x, y);
+        }
+
+        public static Point NormalizeWagnerVI(Point point)
+        {
+            return new Point((point.x + Math.PI) / (2 * Math.PI), (point.y + Math.PI / 2.0) / (Math.PI));
         }
 
         public static Point ToPolarAzimuth(Point point, double edgeLatitude = -30.0)

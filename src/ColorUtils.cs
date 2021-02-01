@@ -16,5 +16,11 @@ namespace com.pmg.MapMaker
         {
             return Color.FromArgb(Convert.ToInt32(hex, 16));
         }
+
+        public static Color RandomColor()
+        {
+            Random rand = new Random();
+            return Color.FromArgb(rand.Next(0, 255), rand.Next(0, 255), rand.Next(0, 255));
+        }
     }
 }
